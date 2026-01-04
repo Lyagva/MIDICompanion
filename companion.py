@@ -149,6 +149,7 @@ class Companion:
         self._ws_client: Optional[CompanionWebSocket] = None
         self._thread: Optional[threading.Thread] = None
         self._loop: Optional[asyncio.AbstractEventLoop] = None
+        self._page, self._rows, self._columns = 1, 9, 9
 
     def _on_button_image(self, page: int, row: int, col: int, img: Image.Image, is_used: bool) -> None:
         """Handle received button image - read bottom-right pixel."""
@@ -185,9 +186,12 @@ class Companion:
     def start_background(self, page: int = 1, rows: int = 9, columns: int = 9) -> None:
         """Start polling in a background thread. Non-blocking."""
         if self._thread and self._thread.is_alive():
-            print("Already running!")
-            return
-        
+            if (self._page, self._rows, self._columns) == (page, rows, columns):
+                print("Already running!")
+                return
+            self.stop_background()
+
+        self._page, self._rows, self._columns = page, rows, columns
         self._thread = threading.Thread(
             target=self._run_in_thread,
             args=(page, rows, columns),
@@ -203,6 +207,7 @@ class Companion:
         if self._thread:
             self._thread.join(timeout=2.0)
             self._thread = None
+        self._page, self._rows, self._columns = 1, 9, 9
         print("Stopped background polling")
     
     async def stop(self) -> None:

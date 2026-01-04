@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <title>Launchpad Companion</title>
+  <script src="{{ url_for('static', filename='tailwind.js') }}"></script>
+</head>
+<body class="bg-gray-50 text-gray-900">
+  <div class="max-w-5xl mx-auto p-6 space-y-6">
+    <h1 class="text-3xl font-bold">Launchpad Companion WebGUI</h1>
+
+    <section class="bg-white shadow rounded-lg p-5 space-y-4">
+      <h2 class="text-xl font-semibold">Bitfocus Companion</h2>
+      <form class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end" method="post" action="{{ url_for('update_companion') }}">
+        <label class="flex flex-col text-sm font-medium text-gray-700">IP
+          <input class="mt-1 border rounded px-3 py-2" name="ip" value="{{ companion_ip }}" required>
+        </label>
+        <label class="flex flex-col text-sm font-medium text-gray-700">Port
+          <input class="mt-1 border rounded px-3 py-2" name="port" value="{{ companion_port }}" required>
+        </label>
+        <button class="h-10 bg-blue-600 text-white rounded hover:bg-blue-700" type="submit">Save & Restart</button>
+      </form>
+    </section>
+
+    <section class="bg-white shadow rounded-lg p-5 space-y-4">
+      <h2 class="text-xl font-semibold">Connections</h2>
+      <form class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end" method="post" action="{{ url_for('create_connection') }}">
+        <label class="flex flex-col text-sm font-medium text-gray-700">Name
+          <input class="mt-1 border rounded px-3 py-2" name="name" required>
+        </label>
+        <label class="flex flex-col text-sm font-medium text-gray-700">Page
+          <input class="mt-1 border rounded px-3 py-2" type="number" name="page" value="1" min="1" required>
+        </label>
+        <label class="flex flex-col text-sm font-medium text-gray-700">Device
+          <select class="mt-1 border rounded px-3 py-2" name="device_type">
+            {% for key in device_types %}
+              <option value="{{ key }}">{{ key }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <button class="h-10 bg-green-600 text-white rounded hover:bg-green-700" type="submit">Create</button>
+      </form>
+
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200 text-sm">
+          <thead class="bg-gray-100">
+            <tr>
+              <th class="px-3 py-2 text-left font-semibold">Name</th>
+              <th class="px-3 py-2 text-left font-semibold">Page</th>
+              <th class="px-3 py-2 text-left font-semibold">Device</th>
+              <th class="px-3 py-2 text-left font-semibold">IN Port</th>
+              <th class="px-3 py-2 text-left font-semibold">OUT Port</th>
+              <th class="px-3 py-2 text-left font-semibold">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200">
+            {% for c in connections %}
+            <tr>
+              <td class="px-3 py-2">{{ c.name }}</td>
+              <td class="px-3 py-2">{{ c.page }}</td>
+              <td class="px-3 py-2">{{ c.device_type.__name__ if c.device_type else "N/A" }}</td>
+              <td class="px-3 py-2">{{ c.port_in or "—" }}</td>
+              <td class="px-3 py-2">{{ c.port_out or "—" }}</td>
+              <td class="px-3 py-2 space-y-2">
+                <form class="flex flex-wrap gap-2 items-end" method="post" action="{{ url_for('update_connection') }}">
+                  <input type="hidden" name="name" value="{{ c.name }}">
+                  <label class="flex flex-col text-xs font-medium text-gray-700">Page
+                    <input class="mt-1 border rounded px-2 py-1" type="number" name="page" value="{{ c.page }}" min="1" required>
+                  </label>
+                  <label class="flex flex-col text-xs font-medium text-gray-700">Device
+                    <select class="mt-1 border rounded px-2 py-1" name="device_type">
+                      {% for key in device_types %}
+                        <option value="{{ key }}" {% if c.device_type and c.device_type.__name__==key %}selected{% endif %}>{{ key }}</option>
+                      {% endfor %}
+                    </select>
+                  </label>
+                  <label class="flex flex-col text-xs font-medium text-gray-700">IN
+                    <select class="mt-1 border rounded px-2 py-1" name="port_in">
+                      <option value="">(skip)</option>
+                      {% for p in midi_in %}
+                        <option value="{{ p }}" {% if p==c.port_in %}selected{% endif %}>{{ p }}</option>
+                      {% endfor %}
+                    </select>
+                  </label>
+                  <label class="flex flex-col text-xs font-medium text-gray-700">OUT
+                    <select class="mt-1 border rounded px-2 py-1" name="port_out">
+                      <option value="">(skip)</option>
+                      {% for p in midi_out %}
+                        <option value="{{ p }}" {% if p==c.port_out %}selected{% endif %}>{{ p }}</option>
+                      {% endfor %}
+                    </select>
+                  </label>
+                  <button class="h-9 bg-blue-600 text-white rounded px-3 hover:bg-blue-700" type="submit">Save</button>
+                </form>
+                <div class="flex flex-wrap gap-2">
+                  <form method="post" action="{{ url_for('activate_connection') }}">
+                    <input type="hidden" name="name" value="{{ c.name }}">
+                    <button class="h-9 bg-indigo-600 text-white rounded px-3 hover:bg-indigo-700" type="submit">Activate</button>
+                  </form>
+                  <form method="post" action="{{ url_for('deactivate_connection') }}">
+                    <input type="hidden" name="name" value="{{ c.name }}">
+                    <button class="h-9 bg-gray-500 text-white rounded px-3 hover:bg-gray-600" type="submit">Deactivate</button>
+                  </form>
+                  <form method="post" action="{{ url_for('remove_connection') }}">
+                    <input type="hidden" name="name" value="{{ c.name }}">
+                    <button class="h-9 bg-red-600 text-white rounded px-3 hover:bg-red-700" type="submit">Remove</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- MIDI ports reload (forces full page reload via redirect) -->
+      <div class="flex flex-wrap items-center gap-3">
+        <form method="post" action="{{ url_for('refresh_ports') }}">
+          <button class="mt-2 h-10 bg-gray-200 text-gray-800 rounded px-4 hover:bg-gray-300" type="submit">
+            Reload MIDI devices
+          </button>
+        </form>
+      </div>
+
+      <p class="text-sm text-gray-700">Available IN: {{ midi_in }}</p>
+      <p class="text-sm text-gray-700">Available OUT: {{ midi_out }}</p>
+    </section>
+  </div>
+</body>
+</html>
+

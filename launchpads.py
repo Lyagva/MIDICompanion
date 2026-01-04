@@ -60,6 +60,20 @@ class MiniMK3:
         conn.midi_out.send_raw(*sysex)
 
     @staticmethod
+    def deactivate(conn: Connection):
+        sysex = [
+            240,
+            0, 32, 41,
+            2,
+            13,
+            14,
+            0,
+            247
+        ]
+
+        conn.midi_out.send_raw(*sysex)
+
+    @staticmethod
     def set_color(conn: Connection, midi_note: int, color):
         sysex = [
             240, 0, 32, 41, 2, 13, 3, 3,

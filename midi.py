@@ -38,6 +38,26 @@ def add_connection(conn: "Connection") -> None:
     connections_registry.add_connection(conn)
 
 
+def remove_connection(name: str) -> None:
+    """Remove connection by name, closing its ports and notifying registry if supported."""
+    with _CONNECTIONS_LOCK:
+        remaining = []
+        for c in CONNECTIONS:
+            if c.name == name:
+                try:
+                    c.close()
+                except Exception:
+                    pass
+                if hasattr(connections_registry, "remove_connection"):
+                    try:
+                        connections_registry.remove_connection(c)
+                    except Exception:
+                        pass
+            else:
+                remaining.append(c)
+        CONNECTIONS[:] = remaining
+
+
 def snapshot_connections():
     # Prefer the registry snapshot (single source of truth).
     return connections_registry.snapshot_connections()
@@ -47,6 +67,8 @@ class Connection:
     def __init__(self, name="conn1", port_in="", port_out="", device_type=None, page=1):
         self.name = name
         self.page = page
+        self.port_in = port_in
+        self.port_out = port_out
 
         self.midi_in = rtmidi2.MidiIn()
         self.midi_in.callback = self.make_callback(self)
@@ -79,14 +101,14 @@ class Connection:
         # Ленивый импорт, чтобы разорвать циклическую зависимость midi <-> companion
         import companion
         companion.COMPANION.down(note)
-        print(f"NOTEON {self.name}: {channel}ch {note}")
+        # print(f"NOTEON {self.name}: {channel}ch {note}")
 
     def noteoff(self, channel, note):
         note = self.device_type.get_note(self, note)
         # Ленивый импорт, чтобы разорвать циклическую зависимость midi <-> companion
         import companion
         companion.COMPANION.up(note)
-        print(f"NOTEOFF {self.name}: {channel}ch {note}")
+        # print(f"NOTEOFF {self.name}: {channel}ch {note}")
 
     def connect_in(self, port_in=""):
         name = port_in
@@ -99,7 +121,7 @@ class Connection:
 
         try:
             self.midi_in.open_port(port)
-
+            self.port_in = port_in
         except Exception as e:
             print(e)
             return
@@ -115,7 +137,7 @@ class Connection:
 
         try:
             self.midi_out.open_port(port)
-            self.device_type.activate(self)
+            self.port_out = port_out
         except Exception as e:
             print(e)
             return
@@ -123,6 +145,22 @@ class Connection:
     def set_color(self, note, color):
         midi_note = self.device_type.get_midi_note(self, note)
         self.device_type.set_color(self, midi_note, color)
+
+    def close(self):
+        """Close MIDI ports and deactivate device if possible."""
+        try:
+            if hasattr(self.device_type, "deactivate"):
+                self.device_type.deactivate(self)
+        except Exception:
+            pass
+        try:
+            self.midi_in.close_port()
+        except Exception:
+            pass
+        try:
+            self.midi_out.close_port()
+        except Exception:
+            pass
 
 
 if __name__ == "__main__":
