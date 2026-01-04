@@ -1,14 +1,3 @@
-/*
-
-!/.gitignore
-
-!/**/
-
-!**/*.py
-
-!/NovationPalette
-!/NovationPalette/**
-
 /.idea/
 /.venv/
 venv/

@@ -1,0 +1,4 @@
+rtmidi2~=1.4.1
+aiohttp~=3.13.3
+requests~=2.32.5
+pillow~=12.1.0
