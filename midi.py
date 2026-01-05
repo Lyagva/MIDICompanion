@@ -62,11 +62,12 @@ def snapshot_connections():
 
 
 class Connection:
-    def __init__(self, name="conn1", port_in="", port_out="", page=1):
+    def __init__(self, name="conn1", port_in="", port_out="", page=1, out_channel=1):
         self.name = name
         self.page = page
         self.port_in = port_in
         self.port_out = port_out
+        self.out_channel = out_channel  # 1-16
 
         self.midi_in = rtmidi2.MidiIn()
         self.midi_in.callback = self.make_callback(self)
@@ -82,6 +83,20 @@ class Connection:
     def make_callback(conn):
         def callback(msg, _):
             msgtype, channel = rtmidi2.splitchannel(msg[0])
+
+            # If OUT port is configured, duplicate MIDI message with channel override
+            if conn.midi_out and conn.port_out:
+                try:
+                    # Reconstruct message with new channel (out_channel is 1-16, need 0-15 for internal)
+                    new_channel = conn.out_channel - 1
+                    # MIDI status byte = message type (high 4 bits) + channel (low 4 bits)
+                    new_status = (msgtype & 0xF0) | (new_channel & 0x0F)
+                    new_msg = [new_status] + list(msg[1:])
+                    conn.midi_out.send_raw(*new_msg)
+                except Exception as e:
+                    print(f"MIDI OUT error: {e}")
+
+            # Always process input normally: trigger Companion down/up actions
             if msgtype == rtmidi2.NOTEON or msgtype == rtmidi2.CC:
                 note, vel = msg[1], msg[2]
                 if vel == 127:
@@ -95,16 +110,13 @@ class Connection:
 
     def noteon(self, channel, note):
         print(f"NOTEON {self.name}: {channel}ch {note}")
-
         import companion
-        # companion.COMPANION.down(note)
-
+        companion.COMPANION.down(f"{self.page}/{note // 10}/{note % 10}")
 
     def noteoff(self, channel, note):
         print(f"NOTEOFF {self.name}: {channel}ch {note}")
-
         import companion
-        # companion.COMPANION.up(note)
+        companion.COMPANION.up(f"{self.page}/{note // 10}/{note % 10}")
 
     def connect_in(self, port_in=""):
         name = port_in
@@ -134,9 +146,12 @@ class Connection:
         try:
             self.midi_out.open_port(port)
             self.port_out = port_out
+        except Exception as e:
+            print(e)
             return
-        except Exception:
-            pass
+
+    def close(self):
+        """Close MIDI ports properly."""
         try:
             self.midi_in.close_port()
         except Exception:

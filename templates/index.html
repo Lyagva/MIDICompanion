@@ -32,6 +32,9 @@
         <label class="flex flex-col text-sm font-medium text-gray-700">Page
           <input class="mt-1 border rounded px-3 py-2" type="number" name="page" value="1" min="1" required>
         </label>
+        <label class="flex flex-col text-sm font-medium text-gray-700">OUT Channel
+          <input class="mt-1 border rounded px-3 py-2" type="number" name="out_channel" value="1" min="1" max="16">
+        </label>
         <button class="h-10 bg-green-600 text-white rounded hover:bg-green-700" type="submit">Create</button>
       </form>
 
@@ -41,7 +44,7 @@
             <tr>
               <th class="px-3 py-2 text-left font-semibold">Name</th>
               <th class="px-3 py-2 text-left font-semibold">Page</th>
-              <th class="px-3 py-2 text-left font-semibold">Device</th>
+              <th class="px-3 py-2 text-left font-semibold">OUT Ch</th>
               <th class="px-3 py-2 text-left font-semibold">IN Port</th>
               <th class="px-3 py-2 text-left font-semibold">OUT Port</th>
               <th class="px-3 py-2 text-left font-semibold">Actions</th>
@@ -52,7 +55,7 @@
             <tr>
               <td class="px-3 py-2">{{ c.name }}</td>
               <td class="px-3 py-2">{{ c.page }}</td>
-              <td class="px-3 py-2">{{ c.device_type.__name__ if c.device_type else "N/A" }}</td>
+              <td class="px-3 py-2">{{ c.out_channel }}</td>
               <td class="px-3 py-2">{{ c.port_in or "—" }}</td>
               <td class="px-3 py-2">{{ c.port_out or "—" }}</td>
               <td class="px-3 py-2 space-y-2">
@@ -60,6 +63,9 @@
                   <input type="hidden" name="name" value="{{ c.name }}">
                   <label class="flex flex-col text-xs font-medium text-gray-700">Page
                     <input class="mt-1 border rounded px-2 py-1" type="number" name="page" value="{{ c.page }}" min="1" required>
+                  </label>
+                  <label class="flex flex-col text-xs font-medium text-gray-700">OUT Ch
+                    <input class="mt-1 border rounded px-2 py-1 w-16" type="number" name="out_channel" value="{{ c.out_channel }}" min="1" max="16">
                   </label>
                   <label class="flex flex-col text-xs font-medium text-gray-700">IN
                     <select class="mt-1 border rounded px-2 py-1" name="port_in">

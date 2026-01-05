@@ -39,8 +39,9 @@ def update_companion():
 def create_connection():
     name = request.form.get("name", "").strip()
     page = int(request.form.get("page", "1") or 1)
+    out_channel = int(request.form.get("out_channel", "1") or 1)
     if name:
-        conn = midi.Connection(name=name, page=page)
+        conn = midi.Connection(name=name, page=page, out_channel=out_channel)
         midi.add_connection(conn)
     return redirect(url_for("index"))
 
@@ -52,8 +53,9 @@ def update_connection():
     port_in = request.form.get("port_in", "")
     port_out = request.form.get("port_out", "")
     page = int(request.form.get("page", "1") or 1)
+    out_channel = int(request.form.get("out_channel", "1") or 1)
     midi.remove_connection(name)
-    conn = midi.Connection(name=name, port_in=port_in, port_out=port_out, page=page)
+    conn = midi.Connection(name=name, port_in=port_in, port_out=port_out, page=page, out_channel=out_channel)
     midi.add_connection(conn)
     return redirect(url_for("index"))
 

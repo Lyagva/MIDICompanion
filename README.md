@@ -12,7 +12,8 @@ The goal is to use the Device as a small hardware surface for Companion:
 ---
 
 ## What it does (current behavior)
-### Device → Companion (button presses)
+
+### 1) Device → Companion (button presses)
 
 - Listens on MIDI IN.
 - When a pad is pressed:
@@ -21,6 +22,17 @@ The goal is to use the Device as a small hardware surface for Companion:
   - `NOTEOFF` (or `NOTEON` with velocity != 127) → HTTP `POST /api/location/<page>/<row>/<col>/up`
 
 The note mapping for Device Mini MK3 is implemented in `devices.py`.
+
+### 2) MIDI OUT Duplication (Optional)
+
+- If a **MIDI OUT port** is configured for a connection, all incoming MIDI messages will be **duplicated** to that port.
+- The output channel can be set independently (1-16), regardless of the incoming channel.
+- This happens **in addition** to normal Companion processing (not instead of).
+- Useful for:
+  - Sending MIDI to external hardware while controlling Companion
+  - Channel routing/remapping
+  - Creating a MIDI splitter/router
+- If no OUT port is configured, input is processed normally without duplication.
 
 ---
 
@@ -37,13 +49,12 @@ The project now ships with a small **Flask Web UI** (see `main.py`) which is the
 
 ### What you can do in the Web UI
 
-- Configure **Bitfocus Companion** host/port and restart the websocket client.
+- Configure **Bitfocus Companion** host/port.
 - Create and manage **MIDI connections**:
   - Name
-  - Page
-  - Device type (currently MiniMK3)
+  - Page (for Companion mode)
+  - **OUT Channel** (1-16) for MIDI OUT duplication
   - MIDI IN / OUT ports
-  - Activate / Deactivate
 - Reload MIDI device lists without restarting the app:
   - **Reload MIDI devices** button (POST `/ports/refresh` → page reload)
 - Exit the program:
