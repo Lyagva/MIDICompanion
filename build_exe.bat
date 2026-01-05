@@ -10,6 +10,9 @@ REM   dist\LaunchpadCompanion.exe
 
 cd /d "%~dp0"
 
+REM Avoid file lock issues if the EXE is running.
+taskkill /IM LaunchpadCompanion.exe /F >nul 2>&1
+
 echo [1/4] Preparing venv...
 if not exist ".venv\Scripts\python.exe" (
   python -m venv .venv
