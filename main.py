@@ -1,15 +1,11 @@
 from flask import Flask, request, redirect, url_for, render_template
-import midi, launchpads, companion
+import midi, companion
 import os
 import threading
 import webbrowser
 
 app = Flask(__name__)
-app.secret_key = "launchpad-companion-ui"
-
-DEVICE_TYPES = {
-    "MiniMK3": launchpads.MiniMK3,
-}
+app.secret_key = "device-companion-ui"
 
 def _find_connection(name: str):
     for c in midi.snapshot_connections():
@@ -29,31 +25,23 @@ def index():
         companion_port=companion.COMPANION.port,
         connections=connections,
         midi_in=midi.DEVICES.get_in(),
-        midi_out=midi.DEVICES.get_out(),
-        device_types=DEVICE_TYPES.keys()
+        midi_out=midi.DEVICES.get_out()
     )
 
 @app.post("/companion")
 def update_companion():
     companion.COMPANION.ip = request.form.get("ip", companion.COMPANION.ip)
     companion.COMPANION.port = request.form.get("port", companion.COMPANION.port)
-    try:
-        companion.COMPANION.stop_background()
-    except Exception:
-        pass
-    _ensure_companion()
+
     return redirect(url_for("index"))
 
 @app.post("/connections/create")
 def create_connection():
     name = request.form.get("name", "").strip()
-    device_key = request.form.get("device_type", "MiniMK3")
     page = int(request.form.get("page", "1") or 1)
     if name:
-        conn = midi.Connection(name=name, page=page,
-                               device_type=DEVICE_TYPES.get(device_key, launchpads.MiniMK3))
+        conn = midi.Connection(name=name, page=page)
         midi.add_connection(conn)
-        _ensure_companion(page=conn.page)
     return redirect(url_for("index"))
 
 @app.post("/connections/update")
@@ -61,40 +49,17 @@ def update_connection():
     name = request.form.get("name", "")
     if not name:
         return redirect(url_for("index"))
-    device_key = request.form.get("device_type", "MiniMK3")
     port_in = request.form.get("port_in", "")
     port_out = request.form.get("port_out", "")
     page = int(request.form.get("page", "1") or 1)
     midi.remove_connection(name)
-    conn = midi.Connection(name=name, port_in=port_in, port_out=port_out, page=page,
-                           device_type=DEVICE_TYPES.get(device_key, launchpads.MiniMK3))
+    conn = midi.Connection(name=name, port_in=port_in, port_out=port_out, page=page)
     midi.add_connection(conn)
-    _ensure_companion(page=conn.page)
     return redirect(url_for("index"))
 
 @app.post("/connections/remove")
 def remove_connection():
     midi.remove_connection(request.form.get("name", ""))
-    return redirect(url_for("index"))
-
-@app.post("/connections/activate")
-def activate_connection():
-    c = _find_connection(request.form.get("name", ""))
-    if c and hasattr(c.device_type, "activate"):
-        try:
-            c.device_type.activate(c)
-        except Exception:
-            pass
-    return redirect(url_for("index"))
-
-@app.post("/connections/deactivate")
-def deactivate_connection():
-    c = _find_connection(request.form.get("name", ""))
-    if c and hasattr(c.device_type, "deactivate"):
-        try:
-            c.device_type.deactivate(c)
-        except Exception:
-            pass
     return redirect(url_for("index"))
 
 @app.post("/ports/refresh")
@@ -111,13 +76,6 @@ def exit_program():
 
     def _shutdown():
         try:
-            # Best-effort: stop Companion background thread.
-            companion.COMPANION.stop_background()
-        except Exception:
-            pass
-
-        # Give the HTTP response a moment to flush.
-        try:
             import time
             time.sleep(0.25)
         except Exception:
@@ -130,6 +88,5 @@ def exit_program():
 
 if __name__ == "__main__":
     midi.DEVICES.update()
-    _ensure_companion()
     webbrowser.open("http://127.0.0.1:5000")
     app.run(host="0.0.0.0", port=5000, debug=False)

@@ -1,17 +1,17 @@
 @echo off
 setlocal enabledelayedexpansion
 
-REM LaunchpadCompanion - one-file EXE build (Windows)
+REM MIDI Companion - one-file EXE build (Windows)
 REM - Creates/uses .venv
 REM - Installs requirements + pyinstaller
 REM - Bundles templates/ and static/
 REM Output:
-REM   dist\LaunchpadCompanion.exe
+REM   dist\MIDICompanion.exe
 
 cd /d "%~dp0"
 
 REM Avoid file lock issues if the EXE is running.
-taskkill /IM LaunchpadCompanion.exe /F >nul 2>&1
+taskkill /IM MIDICompanion.exe /F >nul 2>&1
 
 echo [1/4] Preparing venv...
 if not exist ".venv\Scripts\python.exe" (
@@ -43,7 +43,7 @@ REM We bundle Flask templates & static so render_template/url_for work.
   --noconfirm ^
   --clean ^
   --onefile ^
-  --name LaunchpadCompanion ^
+  --name MIDICompanion ^
   --add-data "templates;templates" ^
   --add-data "static;static" ^
   main.py
@@ -54,14 +54,13 @@ if errorlevel 1 (
 )
 
 echo [4/4] Done.
-echo EXE: %CD%\dist\LaunchpadCompanion.exe
+echo EXE: %CD%\dist\MIDICompanion.exe
 
 echo.
 echo Notes:
 echo - If the EXE can't find templates/static, check that the add-data paths exist.
 echo - rtmidi2 may require system MIDI drivers; run the EXE on a machine with them installed.
 
-del /q LaunchpadCompanion.spec >nul 2>&1
+del /q MIDICompanion.spec >nul 2>&1
 
 endlocal
-

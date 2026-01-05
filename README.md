@@ -1,28 +1,18 @@
-# LaunchpadCompanion (WIP)
+# MIDI Companion (WIP)
 
-LaunchpadCompanion is a **work-in-progress** bridge between **Bitfocus Companion** and a **Novation Launchpad** (currently: Launchpad Mini MK3 mapping is implemented).
+MIDI Companion is a **work-in-progress** bridge between **Bitfocus Companion** and a **Novation Device** (currently: Device Mini MK3 mapping is implemented).
 
-The goal is to use the Launchpad as a small hardware surface for Companion:
+The goal is to use the Device as a small hardware surface for Companion:
 
-- **Companion → Launchpad**: mirror button colors to the Launchpad LEDs.
-- **Launchpad → Companion**: send pad presses/releases to Companion as `down`/`up` actions.
+- **Companion → Device**: mirror button colors to the Device LEDs.
+- **Device → Companion**: send pad presses/releases to Companion as `down`/`up` actions.
 
 > Status: things work enough for experimentation, but the API and structure may change.
 
 ---
 
 ## What it does (current behavior)
-
-### 1) Companion → Launchpad (LED feedback)
-
-- Connects to Companion via **tRPC WebSocket** at:
-  - `ws://<ip>:<port>/trpc`
-- Subscribes to `preview.graphics.location` for each grid location.
-- When an image is received, it reads the **bottom-right pixel** of that image.
-- That pixel’s RGB value is sent to each MIDI connection whose `conn.page` matches the image `page`.
-- For Launchpad Mini MK3, colors are sent via **SysEx RGB**.
-
-### 2) Launchpad → Companion (button presses)
+### Device → Companion (button presses)
 
 - Listens on MIDI IN.
 - When a pad is pressed:
@@ -30,7 +20,7 @@ The goal is to use the Launchpad as a small hardware surface for Companion:
 - When released:
   - `NOTEOFF` (or `NOTEON` with velocity != 127) → HTTP `POST /api/location/<page>/<row>/<col>/up`
 
-The note mapping for Launchpad Mini MK3 is implemented in `launchpads.py`.
+The note mapping for Device Mini MK3 is implemented in `devices.py`.
 
 ---
 
@@ -75,8 +65,8 @@ The project now ships with a small **Flask Web UI** (see `main.py`) which is the
   - `Companion`: convenience wrapper and background-thread runner.
 - `midi.py`
   - `Connection`: MIDI in/out handling, note mapping, and sending colors.
-- `launchpads.py`
-  - `MiniMK3`: Launchpad Mini MK3 mapping + SysEx.
+- `devices.py`
+  - `MiniMK3`: Device Mini MK3 mapping + SysEx.
   - **Novation palette is embedded in code** (no external `NovationPalette` file needed at runtime).
 - `connections_registry.py`
   - Thread-safe registry of active MIDI connections.
@@ -104,7 +94,7 @@ This project depends on a few Python packages (based on imports in the code):
 You also need:
 
 - A running Bitfocus Companion instance (local or reachable over the network).
-- A Launchpad (or another device once mapped) + working MIDI driver.
+- A Device (or another device once mapped) + working MIDI driver.
 
 ---
 

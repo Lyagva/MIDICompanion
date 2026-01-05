@@ -1,5 +1,3 @@
-import time
-
 import rtmidi2
 import threading
 
@@ -64,7 +62,7 @@ def snapshot_connections():
 
 
 class Connection:
-    def __init__(self, name="conn1", port_in="", port_out="", device_type=None, page=1):
+    def __init__(self, name="conn1", port_in="", port_out="", page=1):
         self.name = name
         self.page = page
         self.port_in = port_in
@@ -74,7 +72,6 @@ class Connection:
         self.midi_in.callback = self.make_callback(self)
 
         self.midi_out = rtmidi2.MidiOut()
-        self.device_type = device_type
 
         if port_in != "":
             self.connect_in(port_in)
@@ -97,18 +94,17 @@ class Connection:
         return callback
 
     def noteon(self, channel, note):
-        note = self.device_type.get_note(self, note)
-        # Ленивый импорт, чтобы разорвать циклическую зависимость midi <-> companion
+        print(f"NOTEON {self.name}: {channel}ch {note}")
+
         import companion
-        companion.COMPANION.down(note)
-        # print(f"NOTEON {self.name}: {channel}ch {note}")
+        # companion.COMPANION.down(note)
+
 
     def noteoff(self, channel, note):
-        note = self.device_type.get_note(self, note)
-        # Ленивый импорт, чтобы разорвать циклическую зависимость midi <-> companion
+        print(f"NOTEOFF {self.name}: {channel}ch {note}")
+
         import companion
-        companion.COMPANION.up(note)
-        # print(f"NOTEOFF {self.name}: {channel}ch {note}")
+        # companion.COMPANION.up(note)
 
     def connect_in(self, port_in=""):
         name = port_in
@@ -138,19 +134,7 @@ class Connection:
         try:
             self.midi_out.open_port(port)
             self.port_out = port_out
-        except Exception as e:
-            print(e)
             return
-    
-    def set_color(self, note, color):
-        midi_note = self.device_type.get_midi_note(self, note)
-        self.device_type.set_color(self, midi_note, color)
-
-    def close(self):
-        """Close MIDI ports and deactivate device if possible."""
-        try:
-            if hasattr(self.device_type, "deactivate"):
-                self.device_type.deactivate(self)
         except Exception:
             pass
         try:
@@ -165,23 +149,11 @@ class Connection:
 
 if __name__ == "__main__":
     try:
-        import launchpads
         import companion
         print("Input ports", DEVICES.get_in())
         print("Output ports", DEVICES.get_out())
         print()
-
-        conn = Connection(name="test", port_in="MIDIIN2 (LPMiniMK3 MIDI) 2", port_out="MIDIOUT2 (LPMiniMK3 MIDI) 3",
-                        device_type=launchpads.MiniMK3)
+        conn = Connection(name="test", port_in="MIDIIN2 (LPMiniMK3 MIDI) 2", port_out="MIDIOUT2 (LPMiniMK3 MIDI) 3")
         add_connection(conn)
-        companion.COMPANION.start_background(page=conn.page, rows=9, columns=9)
-
-        running = True
-        while running:
-            cmd = input()
-            if cmd == "q":
-                running = False
-                continue
-    except Exception as e:
-        print(e)
-    companion.COMPANION.stop_background()
+    except:
+        pass
