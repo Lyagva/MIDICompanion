@@ -119,6 +119,12 @@
             Reload MIDI devices
           </button>
         </form>
+
+        <form method="post" action="{{ url_for('exit_program') }}" onsubmit="return confirm('Exit LaunchpadCompanion?');">
+          <button class="mt-2 h-10 bg-red-600 text-white rounded px-4 hover:bg-red-700" type="submit">
+            Exit program
+          </button>
+        </form>
       </div>
 
       <p class="text-sm text-gray-700">Available IN: {{ midi_in }}</p>

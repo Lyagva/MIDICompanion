@@ -1,5 +1,7 @@
 from flask import Flask, request, redirect, url_for, render_template
 import midi, launchpads, companion
+import os
+import threading
 
 app = Flask(__name__)
 app.secret_key = "launchpad-companion-ui"
@@ -97,6 +99,32 @@ def deactivate_connection():
 @app.post("/ports/refresh")
 def refresh_ports():
     midi.DEVICES.update()
+    return redirect(url_for("index"))
+
+@app.post("/exit")
+def exit_program():
+    """Terminate the application.
+
+    We spawn a short-lived thread so we can return a redirect to the browser first.
+    """
+
+    def _shutdown():
+        try:
+            # Best-effort: stop Companion background thread.
+            companion.COMPANION.stop_background()
+        except Exception:
+            pass
+
+        # Give the HTTP response a moment to flush.
+        try:
+            import time
+            time.sleep(0.25)
+        except Exception:
+            pass
+
+        os._exit(0)
+
+    threading.Thread(target=_shutdown, daemon=True).start()
     return redirect(url_for("index"))
 
 if __name__ == "__main__":
