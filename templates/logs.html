@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <title>MIDI Logs - MIDI Companion</title>
+  <link rel="icon" href="{{ url_for('static', filename='icon256.ico') }}" type="image/x-icon">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='icon256.ico') }}" type="image/x-icon">
+  <script src="{{ url_for('static', filename='tailwind.js') }}"></script>
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+  <style>
+    .log-entry {
+      animation: fadeIn 0.2s ease-in;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .noteon { color: #16a34a; font-weight: 600; }
+    .noteoff { color: #dc2626; font-weight: 600; }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-900">
+  <div class="max-w-5xl mx-auto p-6 space-y-6">
+    <div class="flex items-center gap-4">
+      <a href="{{ url_for('index') }}" class="text-blue-600 hover:text-blue-800">← Back to Connections</a>
+      <h1 class="text-3xl font-bold">MIDI Event Logs</h1>
+    </div>
+
+    <section class="bg-white shadow rounded-lg p-5 space-y-4">
+      <div class="flex justify-between items-center">
+        <h2 class="text-xl font-semibold">Live MIDI Events</h2>
+        <div class="flex items-center gap-3">
+          <span id="connection-status" class="text-sm px-3 py-1 rounded bg-gray-200 text-gray-700">Connecting...</span>
+          <button id="clear-logs" class="bg-red-600 text-white rounded px-4 py-2 hover:bg-red-700 text-sm">Clear Logs</button>
+        </div>
+      </div>
+
+      <div class="bg-gray-50 border border-gray-200 rounded p-4 h-96 overflow-y-auto font-mono text-sm" id="log-container">
+        <div id="logs" class="space-y-1"></div>
+      </div>
+
+      <p class="text-xs text-gray-600">
+        <strong>Note:</strong> Only NOTEON and NOTEOFF events are shown. Events are logged regardless of whether they have bindings configured.
+      </p>
+    </section>
+  </div>
+
+  <script>
+    const socket = io();
+    const logsContainer = document.getElementById('logs');
+    const logContainerDiv = document.getElementById('log-container');
+    const statusSpan = document.getElementById('connection-status');
+    const clearButton = document.getElementById('clear-logs');
+
+    let autoScroll = true;
+
+    // Check if user is at bottom
+    logContainerDiv.addEventListener('scroll', () => {
+      const isAtBottom = logContainerDiv.scrollHeight - logContainerDiv.scrollTop <= logContainerDiv.clientHeight + 50;
+      autoScroll = isAtBottom;
+    });
+
+    socket.on('connect', () => {
+      console.log('Connected to WebSocket');
+      statusSpan.textContent = 'Connected';
+      statusSpan.className = 'text-sm px-3 py-1 rounded bg-green-100 text-green-700';
+    });
+
+    socket.on('disconnect', () => {
+      console.log('Disconnected from WebSocket');
+      statusSpan.textContent = 'Disconnected';
+      statusSpan.className = 'text-sm px-3 py-1 rounded bg-red-100 text-red-700';
+    });
+
+    socket.on('midi_event', (data) => {
+      const logEntry = document.createElement('div');
+      logEntry.className = 'log-entry';
+
+      const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false });
+      const eventClass = data.event === 'NOTEON' ? 'noteon' : 'noteoff';
+
+      logEntry.innerHTML = `
+        <span class="text-gray-500">[${timestamp}]</span>
+        <span class="text-blue-600 font-semibold">${data.connection}</span>
+        <span class="${eventClass}">${data.event}</span>:
+        <span class="text-purple-600">${data.channel}ch</span>
+        <span class="text-orange-600">${data.note} note</span>
+      `;
+
+      logsContainer.appendChild(logEntry);
+
+      // Limit to 200 entries
+      while (logsContainer.children.length > 200) {
+        logsContainer.removeChild(logsContainer.firstChild);
+      }
+
+      // Auto-scroll if user is at bottom
+      if (autoScroll) {
+        logContainerDiv.scrollTop = logContainerDiv.scrollHeight;
+      }
+    });
+
+    clearButton.addEventListener('click', () => {
+      logsContainer.innerHTML = '';
+    });
+  </script>
+</body>
+</html>
+

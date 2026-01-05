@@ -1,7 +1,51 @@
 import rtmidi2
 import threading
+from collections import deque
 
 import connections_registry
+
+# MIDI event logging
+_MIDI_LOGS = deque(maxlen=100)  # Keep last 100 events
+_MIDI_LOG_CALLBACKS = []
+_MIDI_LOG_LOCK = threading.Lock()
+
+
+def add_log_callback(callback):
+    """Register a callback to be called when MIDI events occur."""
+    with _MIDI_LOG_LOCK:
+        _MIDI_LOG_CALLBACKS.append(callback)
+
+
+def remove_log_callback(callback):
+    """Unregister a callback."""
+    with _MIDI_LOG_LOCK:
+        if callback in _MIDI_LOG_CALLBACKS:
+            _MIDI_LOG_CALLBACKS.remove(callback)
+
+
+def _log_midi_event(connection_name, event_type, channel, note):
+    """Log a MIDI event and notify all callbacks."""
+    log_entry = {
+        'connection': connection_name,
+        'event': event_type,
+        'channel': channel,
+        'note': note
+    }
+
+    with _MIDI_LOG_LOCK:
+        _MIDI_LOGS.append(log_entry)
+        # Notify all registered callbacks
+        for callback in _MIDI_LOG_CALLBACKS[:]:  # Copy list to avoid issues if callback modifies it
+            try:
+                callback(log_entry)
+            except Exception as e:
+                print(f"Error in MIDI log callback: {e}")
+
+
+def get_recent_logs(count=100):
+    """Get recent MIDI logs."""
+    with _MIDI_LOG_LOCK:
+        return list(_MIDI_LOGS)[-count:]
 
 
 class Devices:
@@ -62,12 +106,13 @@ def snapshot_connections():
 
 
 class Connection:
-    def __init__(self, name="conn1", port_in="", port_out="", page=1, out_channel=1):
+    def __init__(self, name="conn1", port_in="", port_out="", page=1, out_channel=1, bindings=None):
         self.name = name
         self.page = page
         self.port_in = port_in
         self.port_out = port_out
         self.out_channel = out_channel  # 1-16
+        self.bindings = bindings if bindings is not None else {}  # {midi_note: "page/row/col"}
 
         self.midi_in = rtmidi2.MidiIn()
         self.midi_in.callback = self.make_callback(self)
@@ -96,27 +141,41 @@ class Connection:
                 except Exception as e:
                     print(f"MIDI OUT error: {e}")
 
-            # Always process input normally: trigger Companion down/up actions
-            if msgtype == rtmidi2.NOTEON or msgtype == rtmidi2.CC:
-                note, vel = msg[1], msg[2]
-                if vel == 127:
-                    conn.noteon(channel, note)
-                    return
+            # Simple MIDI logic: NOTEON -> down, NOTEOFF -> up
+            note = msg[1] if len(msg) > 1 else 0
 
+            if msgtype == rtmidi2.NOTEON:
+                conn.noteon(channel, note)
+            elif msgtype == rtmidi2.NOTEOFF:
                 conn.noteoff(channel, note)
-                return
 
         return callback
 
     def noteon(self, channel, note):
-        print(f"NOTEON {self.name}: {channel}ch {note}")
+        # Log MIDI event
+        _log_midi_event(self.name, 'NOTEON', channel, note)
+
+        if note not in self.bindings:
+            return
+
+        location = self.bindings[note]
+
+        print(f"NOTEON {self.name}: ch{channel} note{note} -> {location}")
         import companion
-        companion.COMPANION.down(f"{self.page}/{note // 10}/{note % 10}")
+        companion.COMPANION.down(location)
 
     def noteoff(self, channel, note):
-        print(f"NOTEOFF {self.name}: {channel}ch {note}")
+        # Log MIDI event
+        _log_midi_event(self.name, 'NOTEOFF', channel, note)
+
+        if note not in self.bindings:
+            return
+        location = self.bindings[note]
+
+
+        print(f"NOTEOFF {self.name}: ch{channel} note{note} -> {location}")
         import companion
-        companion.COMPANION.up(f"{self.page}/{note // 10}/{note % 10}")
+        companion.COMPANION.up(location)
 
     def connect_in(self, port_in=""):
         name = port_in

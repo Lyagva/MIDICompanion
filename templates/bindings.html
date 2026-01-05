@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <title>Edit Bindings - {{ connection.name }}</title>
+  <link rel="icon" href="{{ url_for('static', filename='icon256.ico') }}" type="image/x-icon">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='icon256.ico') }}" type="image/x-icon">
+  <script src="{{ url_for('static', filename='tailwind.js') }}"></script>
+</head>
+<body class="bg-gray-50 text-gray-900">
+  <div class="max-w-5xl mx-auto p-6 space-y-6">
+    <div class="flex items-center gap-4">
+      <a href="{{ url_for('index') }}" class="text-blue-600 hover:text-blue-800">← Back to Connections</a>
+      <h1 class="text-3xl font-bold">Edit Bindings: {{ connection.name }}</h1>
+    </div>
+
+    <section class="bg-white shadow rounded-lg p-5 space-y-4">
+      <h2 class="text-xl font-semibold">Add New Binding</h2>
+      <form class="grid grid-cols-1 md:grid-cols-5 gap-3 items-end" method="post" action="{{ url_for('add_binding', name=connection.name) }}">
+        <label class="flex flex-col text-sm font-medium text-gray-700">MIDI Note
+          <input class="mt-1 border rounded px-3 py-2" type="number" name="midi_note" min="0" max="127" required placeholder="0-127">
+        </label>
+        <label class="flex flex-col text-sm font-medium text-gray-700">Page
+          <input class="mt-1 border rounded px-3 py-2" type="number" name="page" min="1" required placeholder="1">
+        </label>
+        <label class="flex flex-col text-sm font-medium text-gray-700">Row
+          <input class="mt-1 border rounded px-3 py-2" type="number" name="row" min="0" required placeholder="0">
+        </label>
+        <label class="flex flex-col text-sm font-medium text-gray-700">Column
+          <input class="mt-1 border rounded px-3 py-2" type="number" name="col" min="0" required placeholder="0">
+        </label>
+        <button class="h-10 bg-green-600 text-white rounded hover:bg-green-700" type="submit">Add Binding</button>
+      </form>
+    </section>
+
+    <section class="bg-white shadow rounded-lg p-5 space-y-4">
+      <h2 class="text-xl font-semibold">Current Bindings</h2>
+
+      {% if connection.bindings %}
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200 text-sm">
+          <thead class="bg-gray-100">
+            <tr>
+              <th class="px-3 py-2 text-left font-semibold">MIDI Note</th>
+              <th class="px-3 py-2 text-left font-semibold">Companion Location</th>
+              <th class="px-3 py-2 text-left font-semibold">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200">
+            {% for note, location in connection.bindings.items() %}
+            <tr>
+              <td class="px-3 py-2 font-mono">{{ note }}</td>
+              <td class="px-3 py-2 font-mono">{{ location }}</td>
+              <td class="px-3 py-2">
+                <form method="post" action="{{ url_for('remove_binding', name=connection.name) }}" class="inline">
+                  <input type="hidden" name="midi_note" value="{{ note }}">
+                  <button class="bg-red-600 text-white rounded px-3 py-1 hover:bg-red-700 text-xs" type="submit">Remove</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="text-gray-500 italic">No bindings configured yet. Add one above to get started.</p>
+      <p class="text-sm text-gray-600 mt-2">
+        <strong>Note:</strong> Without bindings, MIDI notes will be ignored (not sent to Companion).
+      </p>
+      {% endif %}
+    </section>
+
+    <section class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <h3 class="text-lg font-semibold text-blue-900 mb-2">How Bindings Work</h3>
+      <ul class="text-sm text-blue-800 space-y-1 list-disc list-inside">
+        <li><strong>MIDI Note:</strong> The incoming MIDI note number (0-127)</li>
+        <li><strong>Page/Row/Column:</strong> The Bitfocus Companion button location to trigger</li>
+        <li>When a MIDI note matches a binding, it will press/release the specified Companion button</li>
+        <li><strong>Notes without bindings will be ignored</strong> (no action sent to Companion)</li>
+      </ul>
+    </section>
+  </div>
+</body>
+</html>
+

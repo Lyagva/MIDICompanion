@@ -21,6 +21,13 @@ The goal is to use the Device as a small hardware surface for Companion:
 - When released:
   - `NOTEOFF` (or `NOTEON` with velocity != 127) → HTTP `POST /api/location/<page>/<row>/<col>/up`
 
+**Bindings Table:**
+- Each connection has a **bindings table** (dictionary) that maps MIDI notes to specific Companion buttons.
+- Format: `{midi_note: "page/row/col"}`
+- Example: `{60: "1/2/3"}` means MIDI note 60 triggers Companion button at page 1, row 2, column 3.
+- **Notes without bindings are ignored** (no action sent to Companion).
+- Bindings are editable via the Web UI (see below).
+
 The note mapping for Device Mini MK3 is implemented in `devices.py`.
 
 ### 2) MIDI OUT Duplication (Optional)
@@ -55,10 +62,37 @@ The project now ships with a small **Flask Web UI** (see `main.py`) which is the
   - Page (for Companion mode)
   - **OUT Channel** (1-16) for MIDI OUT duplication
   - MIDI IN / OUT ports
+  - **Edit Bindings**: Configure custom MIDI note → Companion button mappings
+- View **MIDI Logs** in real-time:
+  - Live display of all NOTEON/NOTEOFF events
+  - Format: `<connection> <NOTEON/NOTEOFF>: <channel>ch <note> note`
+  - WebSocket-based live updates (no page refresh needed)
+  - Shows events for all connections regardless of bindings
 - Reload MIDI device lists without restarting the app:
   - **Reload MIDI devices** button (POST `/ports/refresh` → page reload)
 - Exit the program:
   - **Exit program** button (POST `/exit`)
+
+### Bindings Editor
+
+- Click **"Edit Bindings"** button on any connection to open the bindings editor
+- Add new bindings: specify MIDI note (0-127) and target Companion location (page/row/col)
+- View all current bindings in a table
+- Remove bindings individually
+- Bindings are preserved when updating connection settings (ports, page, channel)
+
+### MIDI Logs
+
+- Access via **"📊 MIDI Logs"** button on the main page
+- Real-time display of all MIDI NOTEON/NOTEOFF events
+- Shows events from all connections, regardless of whether they have bindings
+- Format: `[timestamp] <connection> NOTEON/NOTEOFF: <channel>ch <note> note`
+- Features:
+  - WebSocket-based live updates (no manual refresh needed)
+  - Auto-scroll (stays at bottom unless you scroll up)
+  - Clear logs button
+  - Color-coded events (green for NOTEON, red for NOTEOFF)
+  - Keeps last 200 events visible, last 100 in memory
 
 ### Notes
 
