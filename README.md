@@ -34,8 +34,42 @@ The note mapping for Launchpad Mini MK3 is implemented in `launchpads.py`.
 
 ---
 
+## Web UI (current recommended workflow)
+
+The project now ships with a small **Flask Web UI** (see `main.py`) which is the easiest way to run and configure everything.
+
+### Start the app
+
+- Run `main.py`.
+- It starts a local web server on **port 5000**.
+- It attempts to open your browser automatically at:
+  - `http://127.0.0.1:5000`
+
+### What you can do in the Web UI
+
+- Configure **Bitfocus Companion** host/port and restart the websocket client.
+- Create and manage **MIDI connections**:
+  - Name
+  - Page
+  - Device type (currently MiniMK3)
+  - MIDI IN / OUT ports
+  - Activate / Deactivate
+- Reload MIDI device lists without restarting the app:
+  - **Reload MIDI devices** button (POST `/ports/refresh` → page reload)
+- Exit the program:
+  - **Exit program** button (POST `/exit`)
+
+### Notes
+
+- The UI shows the currently detected MIDI input/output ports.
+- If you plug/unplug devices while the app is running, use **Reload MIDI devices**.
+
+---
+
 ## Repository layout
 
+- `main.py`
+  - Flask Web UI and routes.
 - `companion.py`
   - `CompanionWebSocket`: connects to Companion, subscribes to button graphics, decodes images.
   - `Companion`: convenience wrapper and background-thread runner.
@@ -43,7 +77,7 @@ The note mapping for Launchpad Mini MK3 is implemented in `launchpads.py`.
   - `Connection`: MIDI in/out handling, note mapping, and sending colors.
 - `launchpads.py`
   - `MiniMK3`: Launchpad Mini MK3 mapping + SysEx.
-  - Palette loading from `NovationPalette`.
+  - **Novation palette is embedded in code** (no external `NovationPalette` file needed at runtime).
 - `connections_registry.py`
   - Thread-safe registry of active MIDI connections.
 
@@ -65,6 +99,7 @@ This project depends on a few Python packages (based on imports in the code):
 - `requests`
 - `Pillow`
 - `rtmidi2`
+- `Flask`
 
 You also need:
 
@@ -73,29 +108,19 @@ You also need:
 
 ---
 
-## How to try it (experimental)
+## Building a standalone EXE (Windows)
 
-There’s a basic demo entrypoint in `midi.py` under `if __name__ == "__main__":`.
+There is a helper script:
 
-What it does:
+- `build_exe.bat`
 
-1. Prints available MIDI input/output ports.
-2. Creates a `Connection(...)` using explicit port names.
-3. Adds the connection.
-4. Starts Companion polling in a background thread.
-
-You will almost certainly need to edit the port names:
-
-- `port_in` must match one of `rtmidi2.get_in_ports()`.
-- `port_out` must match one of `rtmidi2.get_out_ports()`.
-
-You may also need to adjust Companion host/port (see `companion.py`).
+It builds a single-file EXE using PyInstaller and bundles `templates/` and `static/` (including the Web UI assets and favicon), and uses `icon256.ico` as the EXE icon.
 
 ---
 
 ## Troubleshooting
 
-- **No MIDI ports / wrong port names**: print the port list (the demo already does) and copy the exact strings.
+- **No MIDI ports / wrong port names**: use the Web UI, click **Reload MIDI devices**, then re-open the dropdowns.
 - **No LED updates**:
   - Confirm Companion is reachable at `ws://<ip>:<port>/trpc`.
   - Confirm you’re subscribing to the correct `page` and grid size.
@@ -109,4 +134,3 @@ You may also need to adjust Companion host/port (see `companion.py`).
 ## License
 
 No license is included yet. If you plan to publish this publicly, consider adding one.
-

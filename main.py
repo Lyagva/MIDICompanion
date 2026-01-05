@@ -2,6 +2,7 @@ from flask import Flask, request, redirect, url_for, render_template
 import midi, launchpads, companion
 import os
 import threading
+import webbrowser
 
 app = Flask(__name__)
 app.secret_key = "launchpad-companion-ui"
@@ -130,4 +131,5 @@ def exit_program():
 if __name__ == "__main__":
     midi.DEVICES.update()
     _ensure_companion()
+    webbrowser.open("http://127.0.0.1:5000")
     app.run(host="0.0.0.0", port=5000, debug=False)
