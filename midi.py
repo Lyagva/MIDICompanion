@@ -56,8 +56,8 @@ class Devices:
         self.update()
 
     def update(self):
-        self.midi_in = rtmidi2.get_in_ports()
-        self.midi_out = rtmidi2.get_out_ports()
+        self.midi_in = list(map(lambda x: ' '.join(x.split(' ')[:-1]), rtmidi2.get_in_ports()))
+        self.midi_out = list(map(lambda x: ' '.join(x.split(' ')[:-1]), rtmidi2.get_out_ports()))
 
     def get_out(self):
         return self.midi_out

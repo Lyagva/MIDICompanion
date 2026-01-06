@@ -119,8 +119,33 @@
         </form>
       </div>
 
-      <p class="text-sm text-gray-700">Available IN: {{ midi_in }}</p>
-      <p class="text-sm text-gray-700">Available OUT: {{ midi_out }}</p>
+      <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <h3 class="text-sm font-semibold text-gray-700 mb-2">Available IN ports:</h3>
+          {% if midi_in %}
+            <ol class="text-sm text-gray-600 list-decimal list-inside space-y-1">
+              {% for port in midi_in %}
+                <li class="font-mono">{{ port }}</li>
+              {% endfor %}
+            </ol>
+          {% else %}
+            <p class="text-sm text-gray-500 italic">No MIDI IN ports detected</p>
+          {% endif %}
+        </div>
+
+        <div>
+          <h3 class="text-sm font-semibold text-gray-700 mb-2">Available OUT ports:</h3>
+          {% if midi_out %}
+            <ol class="text-sm text-gray-600 list-decimal list-inside space-y-1">
+              {% for port in midi_out %}
+                <li class="font-mono">{{ port }}</li>
+              {% endfor %}
+            </ol>
+          {% else %}
+            <p class="text-sm text-gray-500 italic">No MIDI OUT ports detected</p>
+          {% endif %}
+        </div>
+      </div>
     </section>
   </div>
 </body>
