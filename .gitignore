@@ -1,25 +1,64 @@
-/.idea/
-/.venv/
-venv/
-env/
-.env
-.vscode/
+# Python
 __pycache__/
-**/__pycache__/
 *.py[cod]
 *.pyo
 *.pyd
 *.pyc
 .Python
-pip-wheel-metadata/
-build/
-dist/
-*.egg-info/
+*.so
 *.egg
-/.pytest_cache/
-.mypy_cache/
-*.swp
-*~
-Thumbs.db
-.DS_Store
+*.egg-info/
+dist/
+build/
+pip-wheel-metadata/
 
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+
+# Testing
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.tox/
+*.cover
+
+# Flask
+instance/
+.webassets-cache
+*.log
+
+# Environment variables
+.env
+.env.local
+.flaskenv
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Build artifacts (PyInstaller)
+*.spec
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Distribution / packaging
+*.manifest
+*.spec

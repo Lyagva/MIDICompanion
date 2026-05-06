@@ -106,42 +106,22 @@ def snapshot_connections():
 
 
 class Connection:
-    def __init__(self, name="conn1", port_in="", port_out="", page=1, out_channel=1, bindings=None):
+    def __init__(self, name="conn1", port_in="", page=1, bindings=None):
         self.name = name
         self.page = page
         self.port_in = port_in
-        self.port_out = port_out
-        self.out_channel = out_channel  # 1-16
         self.bindings = bindings if bindings is not None else {}  # {midi_note: "page/row/col"}
 
         self.midi_in = rtmidi2.MidiIn()
         self.midi_in.callback = self.make_callback(self)
 
-        self.midi_out = rtmidi2.MidiOut()
-
         if port_in != "":
             self.connect_in(port_in)
-        if port_out != "":
-            self.connect_out(port_out)
 
     @staticmethod
     def make_callback(conn):
         def callback(msg, _):
             msgtype, channel = rtmidi2.splitchannel(msg[0])
-
-            # If OUT port is configured, duplicate MIDI message with channel override
-            if conn.midi_out and conn.port_out:
-                try:
-                    # Reconstruct message with new channel (out_channel is 1-16, need 0-15 for internal)
-                    new_channel = conn.out_channel - 1
-                    # MIDI status byte = message type (high 4 bits) + channel (low 4 bits)
-                    new_status = (msgtype & 0xF0) | (new_channel & 0x0F)
-                    new_msg = [new_status] + list(msg[1:])
-                    conn.midi_out.send_raw(*new_msg)
-                except Exception as e:
-                    print(f"MIDI OUT error: {e}")
-
-            # Simple MIDI logic: NOTEON -> down, NOTEOFF -> up
             note = msg[1] if len(msg) > 1 else 0
 
             if msgtype == rtmidi2.NOTEON:
@@ -193,30 +173,10 @@ class Connection:
             print(e)
             return
 
-    def connect_out(self, port_out=""):
-        name = port_out
-        if name == "":
-            return
-
-        if port_out not in DEVICES.get_out():
-            return
-        port = DEVICES.get_out().index(port_out)
-
-        try:
-            self.midi_out.open_port(port)
-            self.port_out = port_out
-        except Exception as e:
-            print(e)
-            return
-
     def close(self):
         """Close MIDI ports properly."""
         try:
             self.midi_in.close_port()
-        except Exception:
-            pass
-        try:
-            self.midi_out.close_port()
         except Exception:
             pass
 
@@ -225,9 +185,8 @@ if __name__ == "__main__":
     try:
         import companion
         print("Input ports", DEVICES.get_in())
-        print("Output ports", DEVICES.get_out())
         print()
-        conn = Connection(name="test", port_in="MIDIIN2 (LPMiniMK3 MIDI) 2", port_out="MIDIOUT2 (LPMiniMK3 MIDI) 3")
+        conn = Connection(name="test", port_in="MIDIIN2 (LPMiniMK3 MIDI) 2")
         add_connection(conn)
     except:
         pass
