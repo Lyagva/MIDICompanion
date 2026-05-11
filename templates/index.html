@@ -1,124 +1,110 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MIDI Companion</title>
   <link rel="icon" href="{{ url_for('static', filename='icon256.ico') }}" type="image/x-icon">
-  <link rel="shortcut icon" href="{{ url_for('static', filename='icon256.ico') }}" type="image/x-icon">
-  <script src="{{ url_for('static', filename='tailwind.js') }}"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='companion.css') }}">
   <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-  <style>
-    .status-indicator {
-      display: inline-block;
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      margin-right: 6px;
-    }
-    .status-connected {
-      background-color: #10b981;
-      box-shadow: 0 0 8px #10b981;
-    }
-    .status-disconnected {
-      background-color: #ef4444;
-    }
-    .status-checking {
-      background-color: #f59e0b;
-      animation: pulse 1.5s ease-in-out infinite;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
-    }
-  </style>
 </head>
-<body class="bg-gray-50 text-gray-900">
-  <div class="max-w-5xl mx-auto p-6 space-y-6">
-    <div class="flex justify-between items-center">
-      <h1 class="text-3xl font-bold">MIDI Companion WebGUI</h1>
-      <div class="flex gap-3">
-        <a href="{{ url_for('view_all_bindings') }}" class="bg-indigo-600 text-white rounded px-4 py-2 hover:bg-indigo-700">
-          🎹 View All Bindings
-        </a>
-        <a href="{{ url_for('midi_logs') }}" class="bg-purple-600 text-white rounded px-4 py-2 hover:bg-purple-700">
-          📊 MIDI Logs
-        </a>
+<body>
+  <div class="container">
+    <div class="flex-between mb-lg">
+      <h1>MIDI Companion</h1>
+      <div class="flex flex-gap-md">
+        <a href="{{ url_for('view_all_bindings') }}" class="btn btn-info">🎹 View All Bindings</a>
+        <a href="{{ url_for('midi_logs') }}" class="btn btn-info">📊 MIDI Logs</a>
       </div>
     </div>
 
-    <section class="bg-white shadow rounded-lg p-5 space-y-4">
-      <div class="flex justify-between items-center">
-        <h2 class="text-xl font-semibold">Bitfocus Companion</h2>
-        <div class="flex items-center text-sm">
-          <span class="status-indicator status-checking" id="companion-status"></span>
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Bitfocus Companion</h2>
+        <div class="status-indicator status-checking" id="companion-status">
           <span id="companion-status-text">Checking...</span>
         </div>
       </div>
-      <form class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end" method="post" action="{{ url_for('update_companion') }}">
-        <label class="flex flex-col text-sm font-medium text-gray-700">IP
-          <input class="mt-1 border rounded px-3 py-2" name="ip" value="{{ companion_ip }}" required>
-        </label>
-        <label class="flex flex-col text-sm font-medium text-gray-700">Port
-          <input class="mt-1 border rounded px-3 py-2" name="port" value="{{ companion_port }}" required>
-        </label>
-        <button class="h-10 bg-blue-600 text-white rounded hover:bg-blue-700" type="submit">Save & Restart</button>
-      </form>
-    </section>
 
-    <section class="bg-white shadow rounded-lg p-5 space-y-4">
-      <h2 class="text-xl font-semibold">Connections</h2>
-      <form class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end" method="post" action="{{ url_for('create_connection') }}">
-        <label class="flex flex-col text-sm font-medium text-gray-700">Name
-          <input class="mt-1 border rounded px-3 py-2" name="name" required>
-        </label>
-        <label class="flex flex-col text-sm font-medium text-gray-700">Page
-          <input class="mt-1 border rounded px-3 py-2" type="number" name="page" value="1" min="1" required>
-        </label>
-        <button class="h-10 bg-green-600 text-white rounded hover:bg-green-700" type="submit">Create</button>
+      <form method="post" action="{{ url_for('update_companion') }}">
+        <div class="form-row form-row-3">
+          <div class="form-group">
+            <label class="form-label">IP Address</label>
+            <input class="form-input" name="ip" value="{{ companion_ip }}" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Port</label>
+            <input class="form-input" name="port" value="{{ companion_port }}" required>
+          </div>
+          <button class="btn btn-primary" type="submit">Save & Restart</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Connections</h2>
+      </div>
+
+      <form method="post" action="{{ url_for('create_connection') }}">
+        <div class="form-row form-row-3">
+          <div class="form-group">
+            <label class="form-label">Name</label>
+            <input class="form-input" name="name" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Page</label>
+            <input class="form-input" type="number" name="page" value="1" min="1" required>
+          </div>
+          <button class="btn btn-success" type="submit">Create Connection</button>
+        </div>
       </form>
 
-      <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200 text-sm">
-          <thead class="bg-gray-100">
+      <div class="table-container">
+        <table class="table">
+          <thead>
             <tr>
-              <th class="px-3 py-2 text-left font-semibold">Name</th>
-              <th class="px-3 py-2 text-left font-semibold">Page</th>
-              <th class="px-3 py-2 text-left font-semibold">IN Port</th>
-              <th class="px-3 py-2 text-left font-semibold">Bindings</th>
-              <th class="px-3 py-2 text-left font-semibold">Actions</th>
+              <th>Name</th>
+              <th>Page</th>
+              <th>MIDI IN</th>
+              <th>Bindings</th>
+              <th>Actions</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-200">
+          <tbody>
             {% for c in connections %}
             <tr>
-              <td class="px-3 py-2">{{ c.name }}</td>
-              <td class="px-3 py-2">{{ c.page }}</td>
-              <td class="px-3 py-2">{{ c.port_in or "—" }}</td>
-              <td class="px-3 py-2">
-                <span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
-                  {{ c.bindings|length }} bound
-                </span>
+              <td>{{ c.name }}</td>
+              <td>{{ c.page }}</td>
+              <td class="text-mono text-sm">{{ c.port_in or "—" }}</td>
+              <td>
+                <span class="badge badge-primary">{{ c.bindings|length }} bound</span>
               </td>
-              <td class="px-3 py-2 space-y-2">
-                <form class="flex flex-wrap gap-2 items-end" method="post" action="{{ url_for('update_connection') }}">
+              <td>
+                <form method="post" action="{{ url_for('update_connection') }}" class="mb-sm">
                   <input type="hidden" name="name" value="{{ c.name }}">
-                  <label class="flex flex-col text-xs font-medium text-gray-700">Page
-                    <input class="mt-1 border rounded px-2 py-1" type="number" name="page" value="{{ c.page }}" min="1" required>
-                  </label>
-                  <label class="flex flex-col text-xs font-medium text-gray-700">IN
-                    <select class="mt-1 border rounded px-2 py-1" name="port_in">
-                      <option value="">(skip)</option>
-                      {% for p in midi_in %}
-                        <option value="{{ p }}" {% if p==c.port_in %}selected{% endif %}>{{ p }}</option>
-                      {% endfor %}
-                    </select>
-                  </label>
-                  <button class="h-9 bg-blue-600 text-white rounded px-3 hover:bg-blue-700" type="submit">Save</button>
+                  <div class="form-row form-row-3">
+                    <div class="form-group">
+                      <label class="form-label text-xs">Page</label>
+                      <input class="form-input" type="number" name="page" value="{{ c.page }}" min="1" required>
+                    </div>
+                    <div class="form-group">
+                      <label class="form-label text-xs">MIDI IN</label>
+                      <select class="form-select" name="port_in">
+                        <option value="">(none)</option>
+                        {% for p in midi_in %}
+                          <option value="{{ p }}" {% if p==c.port_in %}selected{% endif %}>{{ p }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                    <button class="btn btn-primary btn-sm" type="submit">Update</button>
+                  </div>
                 </form>
-                <div class="flex flex-wrap gap-2">
-                  <a href="{{ url_for('edit_bindings', name=c.name) }}" class="h-9 bg-purple-600 text-white rounded px-3 hover:bg-purple-700 flex items-center">Edit Bindings</a>
+                <div class="flex flex-gap-sm">
+                  <a href="{{ url_for('edit_bindings', name=c.name) }}" class="btn btn-info btn-sm">Edit Bindings</a>
                   <form method="post" action="{{ url_for('remove_connection') }}">
                     <input type="hidden" name="name" value="{{ c.name }}">
-                    <button class="h-9 bg-red-600 text-white rounded px-3 hover:bg-red-700" type="submit">Remove</button>
+                    <button class="btn btn-danger btn-sm" type="submit">Remove</button>
                   </form>
                 </div>
               </td>
@@ -128,34 +114,28 @@
         </table>
       </div>
 
-      <!-- MIDI ports reload (forces full page reload via redirect) -->
-      <div class="flex flex-wrap items-center gap-3">
+      <div class="flex flex-gap-md mt-md">
         <form method="post" action="{{ url_for('refresh_ports') }}">
-          <button class="mt-2 h-10 bg-gray-200 text-gray-800 rounded px-4 hover:bg-gray-300" type="submit">
-            Reload MIDI devices
-          </button>
+          <button class="btn btn-secondary" type="submit">Reload MIDI Devices</button>
         </form>
-
-        <form method="post" action="{{ url_for('exit_program') }}" onsubmit="return confirm('Exit MIDICompanion?');">
-          <button class="mt-2 h-10 bg-red-600 text-white rounded px-4 hover:bg-red-700" type="submit">
-            Exit program
-          </button>
+        <form method="post" action="{{ url_for('exit_program') }}" onsubmit="return confirm('Exit MIDI Companion?');">
+          <button class="btn btn-danger" type="submit">Exit Program</button>
         </form>
       </div>
 
-      <div class="mt-4">
-        <h3 class="text-sm font-semibold text-gray-700 mb-2">Available IN ports:</h3>
+      <div class="mt-md">
+        <h3 class="text-sm text-secondary mb-sm" style="font-weight: 600;">Available MIDI IN ports:</h3>
         {% if midi_in %}
-          <ol class="text-sm text-gray-600 list-decimal list-inside space-y-1">
+          <ul style="margin: 0; padding-left: 1.5rem;">
             {% for port in midi_in %}
-              <li class="font-mono">{{ port }}</li>
+              <li class="text-sm text-mono">{{ port }}</li>
             {% endfor %}
-          </ol>
+          </ul>
         {% else %}
-          <p class="text-sm text-gray-500 italic">No MIDI IN ports detected</p>
+          <p class="text-sm text-secondary" style="font-style: italic;">No MIDI IN ports detected</p>
         {% endif %}
       </div>
-    </section>
+    </div>
   </div>
 
   <script>
@@ -178,7 +158,6 @@
       }
     });
 
-    // Check status every 5 seconds
     setInterval(() => {
       socket.emit('check_companion');
     }, 5000);
